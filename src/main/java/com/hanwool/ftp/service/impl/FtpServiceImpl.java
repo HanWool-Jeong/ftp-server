@@ -12,8 +12,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.FileCopyUtils;
 
 import com.hanwool.ftp.data.dto.FileDetailDTO;
-import com.hanwool.ftp.data.entity.FileTable;
-import com.hanwool.ftp.data.repository.FileTableReopository;
+import com.hanwool.ftp.data.entity.Directory;
+import com.hanwool.ftp.data.entity.RegularFile;
+import com.hanwool.ftp.data.repository.DirectoryRepository;
+import com.hanwool.ftp.data.repository.RegularFileRepository;
 import com.hanwool.ftp.service.FtpService;
 
 import jakarta.servlet.http.HttpServletResponse;
@@ -22,38 +24,85 @@ import jakarta.servlet.http.HttpServletResponse;
 public class FtpServiceImpl implements FtpService {
 
     private final String baseDirectory = "/home/hanwool";
-    private final FileTableReopository fileTableReopository;
+    private final DirectoryRepository directoryRepository;
+    private final RegularFileRepository regularFileRepository;
 
     private void initFiles(String path) {
+        Directory baseDirectoryEntity = makeDirectories(baseDirectory);
+        baseDirectoryEntity.setParentDirectory(null);
+    }
+
+    private Directory makeDirectories(String path) {
         File dir = new File(path);
         File[] files = dir.listFiles();
 
-        for (int i = 0; i < files.length; i++) {
-            FileTable fileTable = new FileTable();
-            fileTable.setDirectory(path);
-            fileTable.setName(files[i].getName());
+        Directory directory = new Directory();
+        directory.setCurDir(path);
+        directory.setName(path);
+        directory.setSize(dir.length());
+        directory.setChildDir(new ArrayList<>());
+        directory.setChildFiles(new ArrayList<>());
+        directoryRepository.save(directory);
 
-            fileTableReopository.save(fileTable);
+        for (int i = 0; i < files.length; i++) {
+
+            if (files[i].isDirectory()) {
+                Directory childDirectory = makeDirectories(files[i].getAbsolutePath());
+
+                childDirectory.setParentDirectory(directory);
+                childDirectory.setCurDir(path);
+                childDirectory.setName(files[i].getAbsolutePath());
+                childDirectory.setSize(files[i].length());
+
+                directory.getChildDir().add(childDirectory);
+            } else {
+                RegularFile regularFile = new RegularFile();
+
+                regularFile.setParentDirectory(directory);
+                regularFile.setCurDir(path);
+                regularFile.setName(files[i].getName());
+                regularFile.setSize(files[i].length());
+
+                regularFileRepository.save(regularFile);
+
+                directory.getChildFiles().add(regularFile);
+            }
         }
+
+        return directory;
     }
 
     @Autowired
-    public FtpServiceImpl(FileTableReopository fileTableReopository) {
-        this.fileTableReopository = fileTableReopository;
+    public FtpServiceImpl(DirectoryRepository directoryRepository, RegularFileRepository regularFileRepository) {
+        this.directoryRepository = directoryRepository;
+        this.regularFileRepository = regularFileRepository;
         initFiles(baseDirectory);
     }
 
     @Override
     public List<FileDetailDTO> getFileListOfDirectory(String path) {
-        List<FileTable> fileTables = fileTableReopository.findByDirectory(path);
+        Directory directory = directoryRepository.findByName(path);
         List<FileDetailDTO> files = new ArrayList<>();
 
-        for (int i = 0; i < fileTables.size(); i++) {
-            Long id = fileTables.get(i).getId();
-            String name = fileTables.get(i).getName();
-            String directory = fileTables.get(i).getDirectory();
+        List<Directory> childDir = directory.getChildDir();
+        for (int i = 0; i < childDir.size(); i++) {
+            Long id = childDir.get(i).getId();
+            String name = childDir.get(i).getName();
+            String curDir = childDir.get(i).getCurDir();
+            Long size = childDir.get(i).getSize();
 
-            FileDetailDTO fileDetailDTO = new FileDetailDTO(id, name, directory);
+            FileDetailDTO fileDetailDTO = new FileDetailDTO(id, name, curDir, size);
+            files.add(fileDetailDTO);
+        }
+
+        List<RegularFile> childFiles = directory.getChildFiles();
+        for (int i = 0; i < childFiles.size(); i++) {
+            Long id = childFiles.get(i).getId();
+            String name = childFiles.get(i).getName();
+            String curDir = childFiles.get(i).getCurDir();
+            Long size = childFiles.get(i).getSize();
+
+            FileDetailDTO fileDetailDTO = new FileDetailDTO(id, name, curDir, size);
             files.add(fileDetailDTO);
         }
 
@@ -62,11 +111,11 @@ public class FtpServiceImpl implements FtpService {
 
     @Override
     public void FileDownload(Long fileid, HttpServletResponse response) throws Exception {
-        Optional<FileTable> file = fileTableReopository.findById(fileid);
+        Optional<RegularFile> file = regularFileRepository.findById(fileid);
 
-        String directory = file.get().getDirectory();
+        String curDir = file.get().getCurDir();
         String name = file.get().getName();
-        String path = directory + "/" + name;
+        String path = curDir + "/" + name;
 
         File downloadingFile = new File(path);
 

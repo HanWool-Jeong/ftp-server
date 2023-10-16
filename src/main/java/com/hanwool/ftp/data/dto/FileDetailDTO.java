@@ -16,5 +16,6 @@ public class FileDetailDTO {
     private Long id;
     private String name;
     private String directory;
+    private Long size;
     
 }
