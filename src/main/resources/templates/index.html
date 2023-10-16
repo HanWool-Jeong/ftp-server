@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>hanwool's ftp server</title>
+
+    <script>
+        window.onload = function() {
+            const h1tag = document.getElementById("hi");
+            const file_list = document.getElementById("file_list");
+
+            function get_file_list() {
+                fetch("http://192.168.0.9:36137/ftp/get_list")
+                    .then(res => {
+                        if (res.status === 200)
+                            return res.json();
+                        else
+                            h1tag.innerHTML = "failed!!!";
+                    })
+                    .then(json_data => {
+                        for (var i = 0; i < json_data.length; i++) {
+                            var newA = document.createElement("a");
+                            newA.setAttribute('href', "/ftp/download?fileId=" + json_data[i].id);
+                            newA.setAttribute('download', json_data[i].name);
+                            newA.appendChild(document.createTextNode(json_data[i].name));
+
+                            var newDiv = document.createElement("div");
+                            newDiv.appendChild(newA);
+
+                            file_list.appendChild(newDiv);
+                        }
+                    });
+            }
+
+            get_file_list();
+        }
+    </script>
+
+</head>
+<body>
+    <div>
+        <h1 id="hi">하누이의 ftp 서버입니당</h1>
+        <div id="file_list">
+        </div>
+    </div>
+</body>
+</html>
