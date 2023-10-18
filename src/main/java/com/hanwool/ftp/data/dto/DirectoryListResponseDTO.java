@@ -1,5 +1,7 @@
 package com.hanwool.ftp.data.dto;
 
+import java.util.List;
+
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.Getter;
@@ -11,11 +13,11 @@ import lombok.Setter;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class FileDetailDTO {
+public class DirectoryListResponseDTO {
 
-    private Long id;
-    private boolean directoryFlag;
-    private String name;
-    private Long size;
-    
+    private FileDetailDTO curDirectory;
+
+    private FileDetailDTO parentDirectory;
+
+    private List<FileDetailDTO> files;
 }
