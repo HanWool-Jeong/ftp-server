@@ -18,14 +18,15 @@ function get_file_list(path) {
         })
         .then(json_data => {
             // 부모 디렉토리 만들기
-            if (json_data.parentDirectory != null) {
-                var target_url = "/ftp/get_list?dirId=" + json_data.parentDirectory.id;
-                var new_file_row = document.createElement("a");
-                var tempDiv = document.createElement("div");
+            if (json_data.parentDirectory) {
+                alert('hi');
+                let target_url = "/ftp/get_list?dirId=" + json_data.parentDirectory.id;
+                let new_file_row = document.createElement("a");
+                let tempDiv = document.createElement("div");
 
                 new_file_row.setAttribute('href', "javascript:void(0)");
                 new_file_row.addEventListener('click', () => refresh_file_list(target_url));
-                new_file_row.appendChild(document.createTextNode(json_data.parentDirectory.name));
+                new_file_row.appendChild(document.createTextNode("../"));
 
                 tempDiv.appendChild(new_file_row);
                 parent.appendChild(tempDiv);
@@ -37,11 +38,11 @@ function get_file_list(path) {
 
             // 하위 디렉토리, 파일들 표시
             for (var i = 0; i < json_data.files.length; i++) {
-                var new_file_row = document.createElement("a");
+                let new_file_row = document.createElement("a");
 
                 if (json_data.files[i].directoryFlag == true) {   
                     // 디렉토리일 때
-                    var target_url = "/ftp/get_list?dirId=" + json_data.files[i].id;
+                    let target_url = "/ftp/get_list?dirId=" + json_data.files[i].id;
                     new_file_row.setAttribute('href', "javascript:void(0)");
                     new_file_row.addEventListener('click', () => refresh_file_list(target_url));
                 } else {
@@ -51,11 +52,12 @@ function get_file_list(path) {
                 }
 
                 new_file_row.appendChild(document.createTextNode(json_data.files[i].name));
-                var tempDiv = document.createElement("div");
+                let tempDiv = document.createElement("div");
                 tempDiv.appendChild(new_file_row);
                 parent.appendChild(tempDiv);
             }
         });
+    // 변수 선언 var대신 let을 사용하자..
 }
 
 function refresh_file_list(path) {
