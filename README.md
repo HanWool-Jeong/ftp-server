@@ -10,3 +10,8 @@
 
 * 클릭시 디렉토리는 들어가고 파일은 다운로드 됨<br>
 ![image](https://github.com/HanWool-Jeong/ftp-server/assets/67956068/8c7e2e01-8b06-4fa1-b2c9-4d52fb7c1061)
+
+### 나중에 추가할 기능
+* 파일 업로드(드래그앤드롭)
+* 사진 썸네일
+* 기타 등등..
