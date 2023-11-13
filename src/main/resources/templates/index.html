@@ -10,9 +10,13 @@
 
     <script>
         window.onload = function() {
-            const base_dir = "http://192.168.0.9:36137/ftp/get_list?dirId=1";
+            const base_dir_id = 1;
+            let cur_dir_id;
 
-            get_file_list(base_dir);
+            get_file_list(base_dir_id);
+
+            document.getElementById('upload_button').addEventListener('change', load_files);
+            document.getElementById('submit_button').addEventListener('click', upload_files);
         }
     </script>
 
@@ -21,6 +25,8 @@
     <div>
         <h1 id="hi">정한울의 ftp 서버입니다</h1>
         <h2 id="cur_dir">현재 경로: </h2>
+        <input id="upload_button" type="file" value="업로드할 파일을 선택하십시오" multiple>
+        <input id="submit_button" type="submit" value="업로드" disabled=true>
         <div id="file_list">
         </div>
     </div>

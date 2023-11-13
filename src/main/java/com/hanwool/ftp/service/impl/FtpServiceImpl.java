@@ -2,6 +2,7 @@ package com.hanwool.ftp.service.impl;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.IOException;
 import java.io.OutputStream;
 import java.net.URLEncoder;
 import java.util.ArrayList;
@@ -11,9 +12,11 @@ import java.util.Optional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.util.FileCopyUtils;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.hanwool.ftp.data.dto.DirectoryListResponseDTO;
 import com.hanwool.ftp.data.dto.FileDetailDTO;
+import com.hanwool.ftp.data.dto.FileIODTO;
 import com.hanwool.ftp.data.entity.Directory;
 import com.hanwool.ftp.data.entity.RegularFile;
 import com.hanwool.ftp.data.repository.DirectoryRepository;
@@ -128,11 +131,17 @@ public class FtpServiceImpl implements FtpService {
     }
 
     @Override
-    public void FileDownload(Long fileid, HttpServletResponse response) throws Exception {
-        Optional<RegularFile> file = regularFileRepository.findById(fileid);
+    public void FileDownload(Long fileid, HttpServletResponse response) throws IOException {
+        Optional<RegularFile> f = regularFileRepository.findById(fileid);
+        RegularFile file;
 
-        String curDir = file.get().getCurDir();
-        String name = file.get().getName();
+        if (f.isPresent())
+            file = f.get();
+        else
+            throw new IOException("다운로드할 파일이 없습니다.");
+
+        String curDir = file.getCurDir();
+        String name = file.getName();
         String path = curDir + "/" + name;
 
         File downloadingFile = new File(path);
@@ -150,6 +159,35 @@ public class FtpServiceImpl implements FtpService {
 
         outputStream.close();
         fileInputStream.close();
+    }
+
+    @Override
+    public FileIODTO FileUpload(ArrayList<MultipartFile> files, Long dirId) throws IOException {
+        Optional<Directory> d = directoryRepository.findById(dirId);
+        Directory directory;
+
+        if (d.isPresent())
+            directory = d.get();
+        else
+            throw new IOException("해당 디렉토리가 없습니다");
+
+        String dir = directory.getName();
+
+        for (MultipartFile file : files) {
+            String originalFileName = file.getOriginalFilename();
+            File newFile = new File(dir + "/" + originalFileName);
+            file.transferTo(newFile);
+
+            RegularFile newRegularFile = new RegularFile();
+            newRegularFile.setCurDir(dir);
+            newRegularFile.setName(originalFileName);
+            newRegularFile.setSize(newFile.length());
+            
+            directory.getChildFiles().add(newRegularFile);
+            newRegularFile = regularFileRepository.save(newRegularFile);
+        }
+
+        return new FileIODTO(true);
     }
     
 }
